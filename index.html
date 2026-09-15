@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popcorn Time | Movie Search</title>
+    <style>
+        /* Modern Dark Mode Styling */
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .search-container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            margin-bottom: 40px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #7dd3fc;
+            transform: scale(1.03);
+        }
+
+        /* Movie Display Card */
+        .movie-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid #334155;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .movie-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .poster-wrapper {
+            flex: 1;
+            min-width: 200px;
+            max-width: 250px;
+            background-color: #0b0f19;
+        }
+
+        .poster-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .movie-info {
+            flex: 2;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .movie-title {
+            font-size: 1.8rem;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+
+        .movie-meta {
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .movie-plot {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        /* Responsive Layout for Phones */
+        @media (max-width: 600px) {
+            .movie-card {
+                flex-direction: column;
+            }
+            .poster-wrapper {
+                max-width: 100%;
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container">
+        <h1>🎬 Popcorn Time</h1>
+        <div class="search-box">
+            <input type="text" id="movieInput" placeholder="Search for a movie..." value="Ted">
+            <button id="searchBtn">Search</button>
+        </div>
+        <div id="errorContainer"></div>
+    </div>
+
+    <!-- The Movie Layout Container -->
+    <div id="movieCard" class="movie-card">
+        <div class="poster-wrapper">
+            <img id="moviePoster" src="" alt="Movie Poster">
+        </div>
+        <div class="movie-info">
+            <div id="movieTitle" class="movie-title"></div>
+            <div id="movieMeta" class="movie-meta"></div>
+            <p id="moviePlot" class="movie-plot"></p>
+        </div>
+    </div>
+
+    <script>
+        // Use a working demonstration key embedded for quick testing
+        const API_KEY = '5f49e0f3'; 
+
+        async function searchMovie(title) {
+            const card = document.getElementById('movieCard');
+            const errorContainer = document.getElementById('errorContainer');
+            
+            errorContainer.innerHTML = ''; // Reset error
+            card.classList.remove('show'); // Hide card during loading animation
+
+            const url = `https://omdbapi.com{encodeURIComponent(title)}&apikey=${API_KEY}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.Response === "True") {
+                    // Populate data into the stylized layout elements
+                    document.getElementById('movieTitle').innerText = data.Title;
+                    document.getElementById('movieMeta').innerText = `${data.Year} • ${data.Runtime} • ${data.Genre}`;
+                    document.getElementById('moviePlot').innerText = data.Plot;
+                    
+                    // Fallback in case there is no poster image available
+                    const posterImg = document.getElementById('moviePoster');
+                    posterImg.src = data.Poster !== "N/A" ? data.Poster : "https://placeholder.com";
+                    
+                    // Trigger fade-in animation
+                    setTimeout(() => card.classList.add('show'), 100);
+                } else {
+                    errorContainer.innerHTML = `<p class="error-message">❌ Movie "${title}" not found!</p>`;
+                }
+            } catch (error) {
+                errorContainer.innerHTML = '<p class="error-message">❌ Network error. Check your connection.</p>';
+                console.error(error);
+            }
+        }
+
+        // Search immediately on page load (finds "Ted")
+        window.addEventListener('DOMContentLoaded', () => {
+            searchMovie('Ted');
+        });
+
+        // Search when the user clicks the button
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const searchTitle = document.getElementById('movieInput').value;
+            if (searchTitle.trim() !== "") {
+                searchMovie(searchTitle);
+            }
+        });
+
+        // Search when the user presses "Enter" key
+        document.getElementById('movieInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const searchTitle = document.getElementById('movieInput').value;
+                if (searchTitle.trim() !== "") {
+                    searchMovie(searchTitle);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
